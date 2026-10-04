@@ -144,7 +144,7 @@ TAVILY_API_KEY=your_tavily_api_key_here
 ```bash
 npm run dev
 ```
-Visit [http://localhost:3000](http://localhost:3000).
+Visit https://blogflow-ai-ivory.vercel.app/dashboard
 
 ### 4. Build for Production
 ```bash
