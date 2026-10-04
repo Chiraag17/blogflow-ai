@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import {
-  BlogGenerationFormData, WritingTone, ArticleLength, Blog, StructuredBlogOutput,
+  BlogGenerationFormData, WritingTone, ArticleLength, Blog, StructuredBlogOutput, Website,
 } from '@/types';
 import {
   NICHE_OPTIONS, TONE_OPTIONS, LENGTH_OPTIONS, cn, slugify,
