@@ -1,0 +1,268 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BlogStatus {
+  DRAFT
+  RESEARCHING
+  GENERATING
+  QUALITY_CHECK
+  PENDING_APPROVAL
+  CHANGES_REQUESTED
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+  REJECTED
+  FAILED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVISION_REQUESTED
+}
+
+enum PublishingStatus {
+  PENDING
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+enum WorkflowStatus {
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String              @unique
+  passwordHash       String?
+  role               Role                @default(USER)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  websites           Website[]
+  workflowExecutions WorkflowExecution[]
+  approvals          Approval[]
+
+  @@map("users")
+}
+
+model Website {
+  id                 String              @id @default(cuid())
+  userId             String
+  name               String
+  url                String
+  niche              String
+  targetAudience     String
+  writingTone        String
+  preferredKeywords  Json                @default("[]")
+  excludedTopics     Json                @default("[]")
+  websiteContext     Json?
+  connectionStatus   String              @default("ACTIVE")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blogs              Blog[]
+  researchReports    ResearchReport[]
+  cmsIntegrations    CMSIntegration[]
+  automationConfig   AutomationConfig?
+  workflowExecutions WorkflowExecution[]
+
+  @@index([userId])
+  @@map("websites")
+}
+
+model ResearchReport {
+  id                String    @id @default(cuid())
+  websiteId         String
+  topic             String
+  overview          String    @db.Text
+  keyInsights       Json      @default("[]")
+  importantFacts    Json      @default("[]")
+  suggestedHeadings Json      @default("[]")
+  keywords          Json      @default("[]")
+  sources           Json      @default("[]")
+  status            String    @default("COMPLETED")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  website           Website   @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  blogs             Blog[]
+
+  @@index([websiteId])
+  @@map("research_reports")
+}
+
+model Blog {
+  id                   String              @id @default(cuid())
+  websiteId            String
+  researchReportId     String?
+  title                String
+  subtitle             String?
+  slug                 String              @unique
+  content              String              @db.Text
+  introduction         String?             @db.Text
+  conclusion           String?             @db.Text
+  faqs                 Json?               @default("[]")
+  metaTitle            String?
+  metaDescription      String?
+  focusKeyword         String?
+  secondaryKeywords    Json?               @default("[]")
+  tags                 Json?               @default("[]")
+  category             String?
+  estimatedReadingTime Int                 @default(5)
+  status               BlogStatus          @default(DRAFT)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  website              Website             @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  researchReport       ResearchReport?     @relation(fields: [researchReportId], references: [id], onDelete: SetNull)
+  qualityReports       QualityReport[]
+  approvals            Approval[]
+  publishingRecords    PublishingRecord[]
+  workflowExecutions   WorkflowExecution[]
+
+  @@index([websiteId])
+  @@index([status])
+  @@index([slug])
+  @@map("blogs")
+}
+
+model QualityReport {
+  id                   String    @id @default(cuid())
+  blogId               String
+  grammarStatus        String    @default("PASSED")
+  readabilityScore     Float?
+  seoScore             Float?
+  contentQualityScore  Float?
+  factCheckingResults  Json?     @default("[]")
+  issues               Json?     @default("[]")
+  suggestions          Json?     @default("[]")
+  createdAt            DateTime  @default(now())
+
+  blog                 Blog      @relation(fields: [blogId], references: [id], onDelete: Cascade)
+
+  @@index([blogId])
+  @@map("quality_reports")
+}
+
+model Approval {
+  id          String         @id @default(cuid())
+  blogId      String
+  reviewerId  String?
+  status      ApprovalStatus @default(PENDING)
+  comments    String?        @db.Text
+  reviewedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  blog        Blog           @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  reviewer    User?          @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([blogId])
+  @@index([status])
+  @@map("approvals")
+}
+
+model CMSIntegration {
+  id                   String             @id @default(cuid())
+  websiteId            String
+  provider             String             @default("WORDPRESS")
+  cmsUrl               String
+  username             String
+  encryptedCredentials String             @db.Text
+  connectionStatus     String             @default("CONNECTED")
+  lastConnectedAt      DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  website              Website            @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  publishingRecords    PublishingRecord[]
+
+  @@index([websiteId])
+  @@map("cms_integrations")
+}
+
+model PublishingRecord {
+  id               String           @id @default(cuid())
+  blogId           String
+  integrationId    String
+  externalPostId   String?
+  publishedUrl     String?
+  publishingStatus PublishingStatus @default(PENDING)
+  scheduledAt      DateTime?
+  publishedAt      DateTime?
+  errorMessage     String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  blog             Blog             @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  integration      CMSIntegration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([blogId, integrationId])
+  @@index([publishingStatus])
+  @@map("publishing_records")
+}
+
+model AutomationConfig {
+  id                      String    @id @default(cuid())
+  websiteId               String    @unique
+  enabled                 Boolean   @default(false)
+  researchFrequency       String    @default("WEEKLY")
+  generationFrequency     String    @default("WEEKLY")
+  preferredPublishingDays Json?     @default("[\"Monday\", \"Wednesday\", \"Friday\"]")
+  preferredPublishingTime String    @default("09:00")
+  timezone                String    @default("UTC")
+  maxBlogsPerWeek         Int       @default(3)
+  requireHumanApproval    Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  website                 Website   @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@map("automation_configs")
+}
+
+model WorkflowExecution {
+  id            String         @id @default(cuid())
+  userId        String
+  websiteId     String
+  blogId        String?
+  workflowType  String         @default("AUTONOMOUS_BLOG_CREATION")
+  graphThreadId String         @unique
+  currentNode   String         @default("research")
+  status        WorkflowStatus @default(RUNNING)
+  errorMessage  String?        @db.Text
+  startedAt     DateTime       @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  website       Website        @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  blog          Blog?          @relation(fields: [blogId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([websiteId])
+  @@index([status])
+  @@map("workflow_executions")
+}
