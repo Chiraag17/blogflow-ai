@@ -50,7 +50,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           mobileOpen && 'mobile-open'
         )}
       >
-        <div className="sidebar-logo">
+        <Link href="/landing" className="sidebar-logo" style={{ textDecoration: 'none' }}>
           {collapsed ? (
             <div className="sidebar-logo-icon"
               style={{
@@ -69,7 +69,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               BlogFlow AI
             </span>
           )}
-        </div>
+        </Link>
 
         {/* Navigation */}
         <nav className="sidebar-nav">
