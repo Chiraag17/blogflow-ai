@@ -50,13 +50,22 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           mobileOpen && 'mobile-open'
         )}
       >
-        {/* Logo */}
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <Sparkles size={18} color="white" />
-          </div>
-          {!collapsed && (
-            <span className="text-lg font-bold gradient-text">
+          {collapsed ? (
+            <div className="sidebar-logo-icon"
+              style={{
+                background: 'var(--color-primary)',
+                color: '#fff',
+                fontFamily: 'Merriweather',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              B
+            </div>
+          ) : (
+            <span className="text-lg font-bold"
+              style={{ fontFamily: 'Merriweather', color: 'var(--color-text)' }}>
               BlogFlow AI
             </span>
           )}

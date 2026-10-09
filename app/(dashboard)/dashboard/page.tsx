@@ -16,6 +16,22 @@ import { useAppStore } from '@/lib/store';
 import { DEMO_ANALYTICS } from '@/lib/mock-data';
 import { getStatusColor, getStatusLabel, timeAgo, truncate } from '@/lib/utils';
 
+// Helper to map stat labels to design token colors
+const getStatColors = (label: string) => {
+  switch (label) {
+    case 'Total Blogs':
+      return { bg: 'var(--color-primary-light)', color: 'var(--color-primary)' };
+    case 'Pending Approval':
+      return { bg: 'var(--color-accent-light)', color: 'var(--color-accent)' };
+    case 'Published':
+      return { bg: 'var(--color-primary)', color: '#fff' };
+    case 'Connected Sites':
+      return { bg: 'var(--color-accent)', color: '#fff' };
+    default:
+      return { bg: 'var(--color-bg-muted)', color: 'var(--color-text)' };
+  }
+};
+
 const PIE_COLORS = ['#10b981', '#f59e0b', '#94a3b8', '#8b5cf6', '#6366f1'];
 
 export default function DashboardPage() {
@@ -113,7 +129,7 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <Link key={stat.label} href={stat.href}>
             <div className="stat-card">
-              <div className={`stat-icon ${stat.color}`}>
+              <div className="stat-icon" style={getStatColors(stat.label)}>
                 <stat.icon size={22} />
               </div>
               <div>
@@ -140,13 +156,13 @@ export default function DashboardPage() {
               <AreaChart data={DEMO_ANALYTICS.blogsByMonth}>
                 <defs>
                   <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'var(--color-text-secondary)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: 'var(--color-text-secondary)' }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
                     background: 'white',
@@ -156,7 +172,7 @@ export default function DashboardPage() {
                     fontSize: '13px',
                   }}
                 />
-                <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} fill="url(#colorCount)" />
+                <Area type="monotone" dataKey="count" stroke="var(--color-primary)" strokeWidth={2} fill="url(#colorCount)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -173,9 +189,9 @@ export default function DashboardPage() {
           <div style={{ width: '100%', height: 260 }}>
             <ResponsiveContainer>
               <BarChart data={DEMO_ANALYTICS.publishingActivity} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--color-text-secondary)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 12, fill: 'var(--color-text-secondary)' }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
                     background: 'white',
@@ -185,8 +201,8 @@ export default function DashboardPage() {
                     fontSize: '13px',
                   }}
                 />
-                <Bar dataKey="generated" fill="#c7d2fe" radius={[4, 4, 0, 0]} name="Generated" />
-                <Bar dataKey="published" fill="#6366f1" radius={[4, 4, 0, 0]} name="Published" />
+                <Bar dataKey="generated" fill="var(--color-primary-light)" radius={[4, 4, 0, 0]} name="Generated" />
+                <Bar dataKey="published" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Published" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -207,7 +223,7 @@ export default function DashboardPage() {
             {recentBlogs.map((blog: any) => (
               <div
                 key={blog.id}
-                className="flex items-center justify-between py-3 border-b border-[var(--color-border-light)] last:border-0"
+                className="flex items-center justify-between py-3 border-b border-[var(--color-border)] last:border-0"
               >
                 <div className="min-w-0 flex-1 mr-4">
                   <p className="text-sm font-medium truncate">{truncate(blog.title, 50)}</p>
@@ -215,7 +231,7 @@ export default function DashboardPage() {
                     {blog.websiteName || blog.website?.name || 'TechPulse'} · {timeAgo(blog.updatedAt || blog.date)}
                   </p>
                 </div>
-                <span className={`badge ${getStatusColor(blog.status)}`}>
+                <span className={"badge " + getStatusColor(blog.status)}>
                   {getStatusLabel(blog.status)}
                 </span>
               </div>
@@ -230,19 +246,14 @@ export default function DashboardPage() {
             <div className="card-header">
               <h3 className="card-title">Quick Actions</h3>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-3">
               {quickActions.map((action) => (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border)] hover:border-indigo-200 hover:bg-indigo-50/50 transition-all group"
-                >
-                  <action.icon size={18} className={action.color} />
-                  <span className="text-sm font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text)]">
-                    {action.label}
-                  </span>
+                <Link key={action.label} href={action.href} className="quick-action">
+                  <action.icon size={18} className="icon" />
+                  <span>{action.label}</span>
                 </Link>
               ))}
+            </div>
             </div>
           </div>
 
@@ -290,6 +301,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+
   );
 }

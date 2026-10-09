@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import {
-  Menu, Search, Plus, User,
+  Menu, Search, Plus, User, Sun, Moon,
   ChevronDown, LogOut, Settings, Loader2,
 } from 'lucide-react';
 
@@ -33,6 +33,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [signingOut, setSigningOut] = useState(false);
+  const [isDark, setIsDark] = useState<boolean>(false);
 
   const pageTitle =
     Object.entries(PAGE_TITLES).find(([path]) =>
@@ -47,6 +48,23 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
     setProfileOpen(false);
     await signOut({ callbackUrl: '/login' });
   };
+
+  // initialise theme from localStorage / OS preference
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
+    const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initial = saved ? saved === 'dark' : prefersDark;
+    setIsDark(initial);
+    const html = document.documentElement;
+    if (initial) html.classList.add('dark'); else html.classList.remove('dark');
+  }, []);
+
+  // sync class when isDark changes
+  useEffect(() => {
+    const html = document.documentElement;
+    if (isDark) html.classList.add('dark'); else html.classList.remove('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
 
   return (
     <header className="topbar">
@@ -108,7 +126,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
               <Loader2 size={20} className="animate-spin text-[var(--color-text-muted)]" />
             ) : (
               <>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-semibold select-none">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold select-none" style={{ background: 'var(--color-primary)' }}>
                   {userInitial}
                 </div>
                 <span className="text-sm font-medium hidden md:block max-w-[120px] truncate">
@@ -125,7 +143,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
                 className="fixed inset-0 z-40"
                 onClick={() => setProfileOpen(false)}
               />
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[var(--color-border)] rounded-lg shadow-lg z-50 animate-slide-up py-1">
+              <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 animate-slide-up py-1">
                 <div className="px-4 py-3 border-b border-[var(--color-border)]">
                   <p className="text-sm font-semibold truncate">{displayName}</p>
                   <p className="text-xs text-[var(--color-text-muted)] truncate">
@@ -167,6 +185,15 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
           )}
         </div>
       </div>
+      {/* Theme toggle */}
+      <button
+        onClick={() => setIsDark(prev => !prev)}
+        className="p-2 rounded-md bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg-muted)] transition-colors"
+        aria-label="Toggle light/dark mode"
+      >
+        <Sun size={18} className={isDark ? 'hidden' : ''} />
+        <Moon size={18} className={isDark ? '' : 'hidden'} />
+      </button>
     </header>
   );
 }
